@@ -1,0 +1,74 @@
+# Guardian AI Safety System Fine-Tuning Configuration
+# Base: Qwen2.5-7B-Instruct
+# Purpose: Crisis detection and AI safety monitoring
+
+base_model: Qwen/Qwen2.5-7B-Instruct
+model_type: AutoModelForCausalLM
+tokenizer_type: AutoTokenizer
+
+# Quantization for 24GB GPU
+load_in_8bit: false
+load_in_4bit: true
+strict: false
+
+# Training data
+datasets:
+  - path: guardian-alpaca.jsonl
+    type: alpaca
+    
+# No validation split (only 17 examples)
+val_set_size: 0.0
+
+output_dir: ./guardian-output
+
+# Sequence settings
+sequence_len: 2048  # Guardian responses can be detailed
+sample_packing: true
+pad_to_sequence_len: true
+
+# LoRA configuration
+adapter: qlora
+lora_r: 64  # Higher rank for complex safety decisions
+lora_alpha: 32
+lora_dropout: 0.05
+lora_target_modules:
+  - q_proj
+  - v_proj
+  - k_proj
+  - o_proj
+  - gate_proj
+  - down_proj
+  - up_proj
+lora_target_linear: true
+
+# Training hyperparameters
+gradient_accumulation_steps: 8  # Small dataset, need more accumulation
+micro_batch_size: 1
+num_epochs: 20  # More epochs for small dataset
+optimizer: adamw_bnb_8bit
+lr_scheduler: cosine
+learning_rate: 0.0001  # Lower LR for safety-critical training
+
+# Regularization
+warmup_steps: 10
+weight_decay: 0.01
+
+# Logging
+logging_steps: 1  # Log every step (small dataset)
+save_steps: 50
+eval_steps: 50
+
+# Performance
+bf16: true
+tf32: true
+gradient_checkpointing: true
+flash_attention: true
+
+# Weights & Biases tracking
+wandb_project: guardian-safety-system
+wandb_run_id: guardian-v1
+wandb_entity: null  # Set if you have W&B account
+
+# Special handling for safety-critical training
+special_tokens:
+  pad_token: "<|endoftext|>"

@@ -1,0 +1,46 @@
+python3 /home/rich/src/llama.cpp/convert_hf_to_gguf.py \
+  "/home/rich/models/merged-hf-qwen2.5-7b-echo" \
+  --outfile "/home/rich/models/qwen2.5-7b-echo-f16.gguf" \
+  --outtype f16
+
+/home/rich/src/llama.cpp/build/bin/llama-quantize \
+  "/home/rich/models/qwen2.5-7b-echo-f16.gguf" \
+  "/home/rich/models/qwen2.5-7b-echo-Q5_K_M.gguf" Q5_K_M
+
+
+/home/rich/src/llama.cpp/build/bin/llama-cli \
+  -m /home/rich/models/qwen2.5-7b-echo-Q4_K_M.gguf \
+ -p "<|im_start|>system
+You are Echo, a helpful Kiwi AI assistant.
+<|im_end|>
+<|im_start|>user
+Cool — what do you think of NZ?
+<|im_end|>
+<|im_start|>assistant
+"
+  --temp 0.6 --top-p 0.9 --top-k 40 \
+  --repeat-penalty 1.55 --repeat-last-n 1024 \
+  --presence-penalty 1.0 --frequency-penalty 0.8 \
+  --min-p 0.05 \
+  -n 256
+
+Base model
+
+./build/bin/llama-cli -m /home/rich/models/qwen2.5-7b-base-f16.gguf \
+  -ngl 999 -c 4096 -b 1024 -t 6 --repeat-penalty 1.1
+
+
+/home/rich/src/llama.cpp/build/bin/llama-cli \
+  -m /home/rich/models/qwen2.5-7b-base-f16.gguf \
+ -p "<|im_start|>system
+You are Echo, a helpful Kiwi AI assistant.
+<|im_end|>
+<|im_start|>user
+Cool — what do you think of NZ?
+<|im_end|>
+<|im_start|>assistant
+" --temp 0.6 --top-p 0.9 --top-k 40 \
+  --repeat-penalty 1.55 --repeat-last-n 1024 \
+  --presence-penalty 1.0 --frequency-penalty 0.8 \
+  --min-p 0.05 \
+  -n 256
