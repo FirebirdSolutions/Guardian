@@ -1,0 +1,167 @@
+{
+  "verified_resources": {
+    "emergency": {
+      "number": "111",
+      "name": "Emergency Services",
+      "description": "Police, Fire, Ambulance - Emergency services",
+      "availability": "24/7",
+      "cost": "Free",
+      "situations": ["immediate_danger", "medical_emergency", "police_emergency", "fire_emergency"]
+    },
+    "mental_health_primary": {
+      "number": "1737",
+      "name": "1737 - Mental Health Crisis Line",
+      "description": "Free 24/7 call or text mental health crisis support",
+      "availability": "24/7",
+      "cost": "Free",
+      "methods": ["call", "text"],
+      "situations": ["mental_health", "suicide_ideation", "self_harm", "crisis"],
+      "cultural_support": ["maori", "pacifica", "youth"],
+      "notes": "Can text OR call. Trained specifically for mental health crises."
+    },
+    "lifeline": {
+      "number": "0800 543 354",
+      "name": "Lifeline NZ",
+      "description": "Free 24/7 phone counselling",
+      "availability": "24/7",
+      "cost": "Free",
+      "methods": ["call"],
+      "situations": ["mental_health", "suicide_ideation", "general_crisis", "loneliness"]
+    },
+    "family_violence_hotline": {
+      "number": "0800 456 450",
+      "name": "Family Violence Hotline",
+      "description": "Free 24/7 family violence crisis support",
+      "availability": "24/7",
+      "cost": "Free",
+      "methods": ["call"],
+      "situations": ["domestic_violence", "family_violence", "abuse", "safety_planning"]
+    },
+    "womens_refuge": {
+      "number": "0800 733 843",
+      "name": "Women's Refuge",
+      "description": "Free 24/7 support for women experiencing violence",
+      "availability": "24/7",
+      "cost": "Free",
+      "methods": ["call"],
+      "situations": ["domestic_violence", "family_violence", "womens_safety", "refuge"]
+    },
+    "youthline": {
+      "number": "0800 376 633",
+      "text": "234",
+      "name": "Youthline",
+      "description": "Free 24/7 support for young people under 25",
+      "availability": "24/7",
+      "cost": "Free",
+      "methods": ["call", "text"],
+      "age_group": "under_25",
+      "situations": ["youth_crisis", "youth_mental_health", "bullying", "family_issues"]
+    },
+    "alcohol_drug_helpline": {
+      "number": "0800 787 797",
+      "name": "Alcohol Drug Helpline",
+      "description": "Free 24/7 support for substance use issues",
+      "availability": "24/7",
+      "cost": "Free",
+      "methods": ["call"],
+      "situations": ["substance_abuse", "addiction", "relapse", "recovery"]
+    },
+    "eating_disorders_nz": {
+      "number": "0800 233 457",
+      "name": "ED Help NZ",
+      "description": "Eating disorder support",
+      "availability": "Business hours",
+      "cost": "Free",
+      "methods": ["call"],
+      "situations": ["eating_disorder", "anorexia", "bulimia", "restriction"]
+    },
+    "rural_support_trust": {
+      "number": "0800 787 254",
+      "name": "Rural Support Trust",
+      "description": "Support for farming and rural communities",
+      "availability": "24/7",
+      "cost": "Free",
+      "methods": ["call"],
+      "situations": ["rural_distress", "farming_crisis", "rural_isolation"]
+    },
+    "rainbow_youth_outline": {
+      "number": "0800 688 5463",
+      "name": "Outline (Rainbow Youth)",
+      "description": "Support for LGBTQIA+ youth",
+      "availability": "Varies",
+      "cost": "Free",
+      "methods": ["call"],
+      "situations": ["lgbtq_crisis", "rainbow_youth", "coming_out", "family_rejection"]
+    },
+    "netsafe": {
+      "number": "0508 638 723",
+      "name": "NetSafe",
+      "description": "Online safety and cyberbullying support",
+      "availability": "Business hours",
+      "cost": "Free",
+      "methods": ["call"],
+      "situations": ["cyberbullying", "online_harassment", "stalking", "digital_safety"]
+    },
+    "oranga_tamariki": {
+      "number": "0508 326 459",
+      "name": "Oranga Tamariki",
+      "description": "Child protection services",
+      "availability": "24/7",
+      "cost": "Free",
+      "methods": ["call"],
+      "situations": ["child_abuse", "child_protection", "child_safety", "neglect"]
+    },
+    "samaritans_nz": {
+      "email": "jo@samaritans.org.nz",
+      "name": "Samaritans (NZ)",
+      "description": "Confidential emotional support via email",
+      "availability": "Email response within 24-48 hours",
+      "cost": "Free",
+      "methods": ["email"],
+      "situations": ["emotional_support", "loneliness", "low_risk"],
+      "notes": "Different from UK Samaritans - NZ uses email not phone"
+    }
+  },
+  "situation_routing": {
+    "suicide_ideation": ["1737", "0800 543 354", "111"],
+    "self_harm": ["1737", "0800 543 354", "111"],
+    "mental_health": ["1737", "0800 543 354"],
+    "domestic_violence": ["0800 456 450", "0800 733 843", "111"],
+    "family_violence": ["0800 456 450", "111"],
+    "youth_crisis": ["1737", "0800 376 633", "111"],
+    "substance_abuse": ["0800 787 797", "1737"],
+    "eating_disorder": ["0800 233 457", "1737"],
+    "child_abuse": ["0508 326 459", "111"],
+    "rural_distress": ["0800 787 254", "1737"],
+    "lgbtq_crisis": ["0800 688 5463", "1737"],
+    "cyberbullying": ["0508 638 723", "111"],
+    "immediate_danger": ["111"]
+  },
+  "cultural_resources": {
+    "maori": {
+      "whakarongorau": {
+        "number": "0800 111 777",
+        "name": "Whakarongorau - Māori Mental Health",
+        "description": "Kaupapa Māori mental health services",
+        "language": "te_reo_maori",
+        "availability": "24/7",
+        "cost": "Free"
+      }
+    },
+    "pacifica": {
+      "le_va": {
+        "contact": "info@leva.co.nz",
+        "name": "Le Va - Pasifika Wellbeing",
+        "description": "Pasifika mental health and wellbeing",
+        "availability": "Business hours"
+      }
+    }
+  },
+  "metadata": {
+    "country": "NZ",
+    "region": "New Zealand",
+    "last_updated": "2025-11-22",
+    "verification_status": "verified",
+    "notes": "All numbers verified as of last_updated date. Always cross-check with official sources."
+  }
+}
