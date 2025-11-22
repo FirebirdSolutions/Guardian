@@ -10,9 +10,11 @@ This system splits the Guardian AI training dataset into modular, maintainable c
 - **`outputs.jsonl`** - Expected AI responses (categorized by risk level and situation type)
 
 ### Scripts & Tools
-- **`prompt-editor.html`** - Lightweight web-based editor for managing prompts
+- **`prompt-editor-enhanced.html`** - **NEW!** Enhanced editor with composable output builder (checkboxes for tool calls & sections)
+- **`prompt-editor.html`** - Lightweight editor for managing prompts (original version)
 - **`split-dataset.py`** - Splits full dataset into modular components
 - **`build-dataset.py`** - Combines modular files into full training dataset
+- **`analyze-outputs.py`** - Analyzes outputs to extract tool call and section patterns
 - **`guardian-editor.html`** - Full JSONL editor (legacy, for complete entries)
 
 ### Windows Launchers
@@ -74,10 +76,23 @@ This system splits the Guardian AI training dataset into modular, maintainable c
 5. Save prompts
 6. Rebuild dataset
 
-### Creating New Output Templates
+### Creating New Output Templates (Enhanced Editor)
 
-Currently, outputs are managed via the `outputs.jsonl` file. To add new outputs:
+**NEW!** Use the composable output builder with checkboxes:
 
+1. Open enhanced prompt editor
+2. Click "✨ New Output"
+3. Select output components with checkboxes:
+   - **Tool Calls**: get_crisis_resources, log_incident, check_hallucination
+   - **Core Sections**: RISK LEVEL, PATTERNS DETECTED, ACTION, INTERVENTION
+   - **Additional Sections**: ESCALATE, NOTE, ALERT, TONE, GUIDANCE, etc.
+4. Preview the composed output in real-time
+5. Click "Use This Output" to copy to the output text field
+6. Customize the template text as needed
+7. Set risk level and situation type
+8. Click "Save Output"
+
+**Alternative (Manual):**
 1. Open `outputs.jsonl` in a text editor
 2. Add a new line with format:
    ```json
