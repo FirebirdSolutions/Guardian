@@ -1,0 +1,25 @@
+# Guardian - AI Safety System for Crisis Detection
+# Requirements file for Python dependencies
+
+# Core dependencies
+python>=3.8
+
+# No external dependencies required for core functionality
+# The system uses only Python standard library:
+# - json: for configuration and data files
+# - re: for pattern matching
+# - pathlib: for file path handling
+# - datetime: for timestamps
+# - typing: for type hints
+
+# Optional dependencies for development and testing
+pytest>=7.0.0  # For testing
+pytest-cov>=4.0.0  # For test coverage
+black>=23.0.0  # For code formatting
+flake8>=6.0.0  # For linting
+mypy>=1.0.0  # For type checking
+
+# Optional dependencies for MCP server functionality (if implemented)
+# fastapi>=0.100.0  # For REST API
+# uvicorn>=0.23.0  # For ASGI server
+# pydantic>=2.0.0  # For data validation
