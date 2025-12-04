@@ -1,0 +1,130 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "guardian-llm"
+version = "0.1.0"
+description = "AI Safety System for Real-Time Crisis Detection and Support"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+authors = [
+    {name = "Firebird Solutions"}
+]
+keywords = [
+    "crisis-detection",
+    "mental-health",
+    "ai-safety",
+    "llm",
+    "fine-tuning",
+    "suicide-prevention"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Healthcare Industry",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+]
+
+dependencies = [
+    # Core dependencies (always needed)
+    "numpy>=1.24.0",
+]
+
+[project.optional-dependencies]
+# ML dependencies for training and inference
+ml = [
+    "torch>=2.0.0",
+    "transformers>=4.40.0",
+    "datasets>=2.18.0",
+    "peft>=0.10.0",
+    "bitsandbytes>=0.43.0",
+    "accelerate>=0.28.0",
+    "safetensors>=0.4.0",
+    "sentencepiece>=0.2.0",
+    "protobuf>=4.0.0",
+]
+
+# Training extras (monitoring, optimization)
+training = [
+    "guardian-llm[ml]",
+    "tensorboard>=2.15.0",
+    "wandb>=0.16.0",
+]
+
+# Export utilities
+export = [
+    "guardian-llm[ml]",
+    "onnx>=1.15.0",
+    "onnxruntime>=1.17.0",
+]
+
+# Development dependencies
+dev = [
+    "guardian-llm[ml,training]",
+    "pytest>=8.0.0",
+    "pytest-cov>=4.1.0",
+    "ruff>=0.3.0",
+    "mypy>=1.8.0",
+]
+
+# All dependencies
+all = [
+    "guardian-llm[ml,training,export,dev]",
+]
+
+[project.scripts]
+guardian = "guardian_llm.__main__:main"
+
+[project.urls]
+Homepage = "https://github.com/FirebirdSolutions/Guardian"
+Documentation = "https://github.com/FirebirdSolutions/Guardian#readme"
+Repository = "https://github.com/FirebirdSolutions/Guardian"
+Issues = "https://github.com/FirebirdSolutions/Guardian/issues"
+
+[tool.setuptools.packages.find]
+include = ["guardian_llm*"]
+
+[tool.setuptools.package-data]
+guardian_llm = ["data/*.jsonl"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # Pyflakes
+    "I",      # isort
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "UP",     # pyupgrade
+]
+ignore = [
+    "E501",   # line too long (handled by formatter)
+    "B008",   # do not perform function calls in argument defaults
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["guardian_llm"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true

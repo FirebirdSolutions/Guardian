@@ -343,6 +343,19 @@ paket-files/
 **/__pycache__/
 *.pyc
 
+# Python packaging
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+*.whl
+
+# pytest
+.pytest_cache/
+.coverage
+htmlcov/
+
 # Cake - Uncomment if you are using it
 #tools/**
 #!tools/packages.config
