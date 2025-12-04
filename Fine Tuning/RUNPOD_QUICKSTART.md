@@ -25,14 +25,14 @@ bash runpod_setup.sh
 ```bash
 # Quick test (smaller model, fewer epochs)
 python train_guardian_llm.py \
-  --training-file "Fine Tuning/training-data-normalized.jsonl" \
+  --training-file "Fine Tuning/training-data-final.jsonl" \
   --model-size small \
   --epochs 5 \
   --output-dir ./guardian-test
 
 # Full training (7B model, 20 epochs)
 python train_guardian_llm.py \
-  --training-file "Fine Tuning/training-data-normalized.jsonl" \
+  --training-file "Fine Tuning/training-data-final.jsonl" \
   --model-size large \
   --epochs 20 \
   --output-dir ./guardian-output
