@@ -524,13 +524,17 @@ def load_and_prepare_dataset(
                 examples["text"],
                 truncation=True,
                 max_length=model_config.max_seq_length if model_config else 2048,
-                padding="max_length",
+                padding=False,  # Let collator handle padding for efficiency
             )
+
+        # Remove all non-tensor columns (text, risk_level, weight, etc.)
+        columns_to_remove = [c for c in formatted_dataset.column_names
+                            if c not in ["input_ids", "attention_mask", "labels"]]
 
         formatted_dataset = formatted_dataset.map(
             tokenize_function,
             batched=True,
-            remove_columns=["text"],
+            remove_columns=columns_to_remove,
         )
 
     # Split
