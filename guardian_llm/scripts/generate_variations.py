@@ -14,7 +14,7 @@ import sys
 from pathlib import Path
 
 # Configuration
-DEFAULT_INPUT_FILE = "guardian_llm/data/training-data-final.jsonl"
+DEFAULT_INPUT_FILE = "guardian_llm/data/training-merged.jsonl"
 DEFAULT_OUTPUT_FILE = "guardian_llm/data/batch_requests.jsonl"
 # Use Claude 3.5 Sonnet for batch generation (update as newer models become available)
 MODEL = "claude-3-5-sonnet-20241022"
