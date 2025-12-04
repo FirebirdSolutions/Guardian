@@ -16,7 +16,8 @@ from pathlib import Path
 # Configuration
 DEFAULT_INPUT_FILE = "guardian_llm/data/training-data-final.jsonl"
 DEFAULT_OUTPUT_FILE = "guardian_llm/data/batch_requests.jsonl"
-MODEL = "claude-sonnet-4-20250514"
+# Use Claude 3.5 Sonnet for batch generation (update as newer models become available)
+MODEL = "claude-3-5-sonnet-20241022"
 
 # System prompt for the variation generator
 SYSTEM_PROMPT = """You are helping create training data for Guardian, an AI crisis detection system.

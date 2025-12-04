@@ -525,7 +525,7 @@ Respond with JSON:
 def prepare_batch_requests(
     seed_examples: List[Dict],
     output_file: Path,
-    model: str = "claude-sonnet-4-20250514"
+    model: str = "claude-3-5-sonnet-20241022"
 ) -> int:
     """
     Prepare batch requests for Anthropic API to generate training data variations.
