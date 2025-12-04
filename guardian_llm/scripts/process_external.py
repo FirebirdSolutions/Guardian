@@ -421,7 +421,7 @@ Output:
     print(f"\nNext steps:")
     print(f"  1. Review samples: head -5 {output_path}")
     print(f"  2. Merge with training data:")
-    print(f"     cat {output_path} >> 'Fine Tuning/training-data-final.jsonl'")
+    print(f"     cat {output_path} >> 'guardian_llm/data/training-data-final.jsonl'")
 
 
 if __name__ == '__main__':

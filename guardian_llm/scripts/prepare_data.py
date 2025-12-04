@@ -126,8 +126,8 @@ def process_example(example: dict) -> dict:
 
 def main():
     # Default paths
-    input_path = Path('Fine Tuning/training-data.jsonl')
-    output_path = Path('Fine Tuning/training-data-final.jsonl')
+    input_path = Path('guardian_llm/data/training-data-final.jsonl')
+    output_path = Path('guardian_llm/data/training-data-prepared.jsonl')
 
     # Parse command line args
     if len(sys.argv) >= 2:

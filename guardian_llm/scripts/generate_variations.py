@@ -14,8 +14,8 @@ import sys
 from pathlib import Path
 
 # Configuration
-DEFAULT_INPUT_FILE = "Fine Tuning/training-data-final.jsonl"
-DEFAULT_OUTPUT_FILE = "batch_requests.jsonl"
+DEFAULT_INPUT_FILE = "guardian_llm/data/training-data-final.jsonl"
+DEFAULT_OUTPUT_FILE = "guardian_llm/data/batch_requests.jsonl"
 MODEL = "claude-sonnet-4-20250514"
 
 # System prompt for the variation generator

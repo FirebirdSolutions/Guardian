@@ -84,8 +84,8 @@ def download_and_process(api_key: str, batch_id: str):
     output_file = normalized_file
 
     # Create combined dataset
-    combined_file = "combined_training_data.jsonl"
-    original_file = "Fine Tuning/training-data-final.jsonl"
+    combined_file = "guardian_llm/data/combined_training_data.jsonl"
+    original_file = "guardian_llm/data/training-data-final.jsonl"
 
     if Path(original_file).exists():
         print(f"\nCreating combined dataset...")

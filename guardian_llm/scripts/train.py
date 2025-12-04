@@ -80,7 +80,7 @@ Training Tips:
     parser.add_argument(
         "--training-file",
         type=str,
-        default="Fine Tuning/training-data-final.jsonl",
+        default="guardian_llm/data/training-data-final.jsonl",
         help="Path to training data JSONL file",
     )
     parser.add_argument(

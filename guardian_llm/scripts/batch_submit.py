@@ -107,10 +107,10 @@ def main():
         epilog="""
 Examples:
   # Generate batch requests from existing training data
-  python -m guardian_llm.scripts.batch_submit --generate-from "Fine Tuning/training-data-final.jsonl" --sample 50
+  python -m guardian_llm.scripts.batch_submit --generate-from "guardian_llm/data/training-data-final.jsonl" --sample 50
 
   # Submit existing batch requests file
-  python -m guardian_llm.scripts.batch_submit --input-file batch_requests.jsonl
+  python -m guardian_llm.scripts.batch_submit --input-file guardian_llm/data/batch_requests.jsonl
         """
     )
     parser.add_argument("--api-key", help="Anthropic API key (or set ANTHROPIC_API_KEY env var)")
