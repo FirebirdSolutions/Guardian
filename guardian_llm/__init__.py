@@ -27,6 +27,17 @@ from .inference import GuardianInference, GuardianPipeline, GuardianResponse
 from .tools import GuardianTools, ToolCallParser, ToolExecutor
 from .regions import Region, RegionManager, RegionalConfig
 from .export import GuardianExporter, export_model
+from .data_utils import (
+    normalize_dataset,
+    convert_format,
+    split_dataset_to_components,
+    build_dataset_from_files,
+    prepare_batch_requests,
+    process_batch_results,
+    compute_stats,
+    TrainingFormat,
+    INSTRUCTION_TEMPLATE_V2,
+)
 
 __version__ = "1.0.0"
 __author__ = "Guardian Team"
@@ -60,4 +71,14 @@ __all__ = [
     # Export
     "GuardianExporter",
     "export_model",
+    # Data Utilities
+    "normalize_dataset",
+    "convert_format",
+    "split_dataset_to_components",
+    "build_dataset_from_files",
+    "prepare_batch_requests",
+    "process_batch_results",
+    "compute_stats",
+    "TrainingFormat",
+    "INSTRUCTION_TEMPLATE_V2",
 ]

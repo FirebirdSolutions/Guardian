@@ -146,6 +146,38 @@ bash runpod_setup.sh
 - Multi-region support
 - Checkpoint saving
 
+### 5. `guardian_llm/data_utils.py`
+**Purpose:** Consolidated data utilities module
+
+**Commands:**
+```bash
+# Normalize dataset (format + tool calls)
+python guardian_llm/data_utils.py normalize input.jsonl output.jsonl
+
+# Convert between formats (alpaca, chatml, llama, qwen, etc.)
+python guardian_llm/data_utils.py convert input.jsonl output.jsonl --format qwen
+
+# Split into modular components
+python guardian_llm/data_utils.py split training.jsonl ./components/
+
+# Build from components
+python guardian_llm/data_utils.py build prompts.jsonl outputs.jsonl training.jsonl
+
+# Show statistics
+python guardian_llm/data_utils.py stats training.jsonl
+```
+
+### 6. Batch API Scripts
+**Purpose:** Generate additional training data using Anthropic's batch API
+
+```bash
+# Generate batch requests from existing data
+python submit_batch.py --generate-from "Fine Tuning/training-data-final.jsonl" --sample 50
+
+# Download and process results
+python download_batch_results.py <batch_id>
+```
+
 ---
 
 ## Risk Level Definitions
