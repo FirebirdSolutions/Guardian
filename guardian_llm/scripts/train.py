@@ -5,29 +5,26 @@ Guardian LLM Training Script
 Train a custom crisis detection LLM using the Guardian framework.
 
 Usage:
-    python train_guardian_llm.py [OPTIONS]
+    python -m guardian_llm.scripts.train [OPTIONS]
 
 Examples:
     # Train with defaults (7B model)
-    python train_guardian_llm.py
+    python -m guardian_llm.scripts.train
 
     # Train smaller model for faster iteration
-    python train_guardian_llm.py --model-size small --epochs 10
+    python -m guardian_llm.scripts.train --model-size small --epochs 10
 
     # Train with multi-region support
-    python train_guardian_llm.py --multi-region --regions NZ,AU,US,UK
+    python -m guardian_llm.scripts.train --multi-region --regions NZ,AU,US,UK
 
     # Resume from checkpoint
-    python train_guardian_llm.py --resume ./guardian-output/checkpoint-500
+    python -m guardian_llm.scripts.train --resume ./guardian-output/checkpoint-500
 """
 
 import argparse
 import logging
 import sys
 from pathlib import Path
-
-# Add parent directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent))
 
 from guardian_llm.config import (
     GuardianConfig,
@@ -83,7 +80,7 @@ Training Tips:
     parser.add_argument(
         "--training-file",
         type=str,
-        default="combined_training_data.jsonl",
+        default="Fine Tuning/training-data-final.jsonl",
         help="Path to training data JSONL file",
     )
     parser.add_argument(
@@ -326,7 +323,7 @@ def main():
             print(f"  Avg Latency: {eval_metrics['avg_latency_ms']:.1f}ms")
 
             if eval_metrics['critical_fn_rate'] > 0:
-                print("\n⚠️  WARNING: Some critical cases were missed!")
+                print("\n  WARNING: Some critical cases were missed!")
                 print("   Consider increasing training epochs or data quality.")
 
     except KeyboardInterrupt:

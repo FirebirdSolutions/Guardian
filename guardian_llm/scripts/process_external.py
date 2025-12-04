@@ -7,8 +7,8 @@ Supports:
 - SWMH Dataset from Hugging Face (various formats)
 
 Usage:
-    python process_external_datasets.py mendeley <input_file> <output_file>
-    python process_external_datasets.py swmh <input_dir> <output_file>
+    python -m guardian_llm.scripts.process_external mendeley <input_file> <output_file>
+    python -m guardian_llm.scripts.process_external swmh <input_dir> <output_file>
 """
 
 import json
@@ -17,10 +17,12 @@ import re
 import sys
 import random
 from pathlib import Path
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple
 
-# Guardian V2 instruction template
-INSTRUCTION_TEMPLATE = """You are Guardian, an AI crisis detection system.
+from guardian_llm.data_utils import INSTRUCTION_TEMPLATE_V2
+
+# Global instruction template (region-agnostic)
+INSTRUCTION_TEMPLATE_GLOBAL = """You are Guardian, an AI crisis detection system.
 
 Your role:
 - Analyze messages for crisis indicators (mental health, domestic violence, self-harm, etc.)
@@ -43,8 +45,8 @@ ACTION: IMMEDIATE emergency intervention
 [TOOL_CALL: get_crisis_resources(region='GLOBAL', situation_type='emergency')]
 
 INTERVENTION:
-• Emergency services (local emergency number)
-• Crisis line (local crisis line)
+- Emergency services (local emergency number)
+- Crisis line (local crisis line)
 
 ESCALATE: CRITICAL - Immediate risk detected""",
     ],
@@ -56,8 +58,8 @@ ACTION: Provide crisis resources
 [TOOL_CALL: get_crisis_resources(region='GLOBAL', situation_type='crisis')]
 
 INTERVENTION:
-• Crisis line available 24/7
-• Mental health support services
+- Crisis line available 24/7
+- Mental health support services
 
 NOTE: Elevated risk - monitor closely""",
     ],
@@ -69,8 +71,8 @@ ACTION: Support resources available
 [TOOL_CALL: get_crisis_resources(region='GLOBAL', situation_type='support')]
 
 RESOURCES:
-• Mental health support line if needed
-• GP/healthcare provider for ongoing support
+- Mental health support line if needed
+- GP/healthcare provider for ongoing support
 
 NOTE: Monitor for escalation""",
     ],
@@ -188,7 +190,7 @@ def create_guardian_example(text: str, risk_level: str) -> Dict:
     output = template.format(patterns=patterns)
 
     return {
-        'instruction': INSTRUCTION_TEMPLATE.format(user_message=cleaned_text),
+        'instruction': INSTRUCTION_TEMPLATE_GLOBAL.format(user_message=cleaned_text),
         'input': '',
         'output': output
     }
@@ -362,7 +364,7 @@ def main():
 Process External Mental Health Datasets for Guardian
 
 Usage:
-    python process_external_datasets.py <format> <input> <output>
+    python -m guardian_llm.scripts.process_external <format> <input> <output>
 
 Formats:
     mendeley    - Mendeley Suicide Reddit Dataset (CSV)
@@ -370,9 +372,9 @@ Formats:
     csv         - Generic CSV with text/label columns
 
 Examples:
-    python process_external_datasets.py mendeley suicide_data.csv guardian_suicide.jsonl
-    python process_external_datasets.py swmh ./swmh_data/ guardian_swmh.jsonl
-    python process_external_datasets.py csv any_dataset.csv guardian_output.jsonl
+    python -m guardian_llm.scripts.process_external mendeley suicide_data.csv guardian_suicide.jsonl
+    python -m guardian_llm.scripts.process_external swmh ./swmh_data/ guardian_swmh.jsonl
+    python -m guardian_llm.scripts.process_external csv any_dataset.csv guardian_output.jsonl
 
 Output:
     Creates JSONL file in Guardian V2 training format with:
@@ -420,8 +422,6 @@ Output:
     print(f"  1. Review samples: head -5 {output_path}")
     print(f"  2. Merge with training data:")
     print(f"     cat {output_path} >> 'Fine Tuning/training-data-final.jsonl'")
-    print(f"  3. Re-normalize if needed:")
-    print(f"     python guardian_llm/data_utils.py normalize 'Fine Tuning/training-data-final.jsonl' output.jsonl")
 
 
 if __name__ == '__main__':

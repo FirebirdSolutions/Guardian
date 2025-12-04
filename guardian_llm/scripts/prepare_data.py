@@ -7,25 +7,17 @@ Combines both transformations:
 2. Consistent tool calling (Option B: CRITICAL/HIGH/MEDIUM get tools, LOW doesn't)
 
 This produces the final recommended training file.
+
+Usage:
+    python -m guardian_llm.scripts.prepare_data [input] [output]
 """
 
 import json
 import re
+import sys
 from pathlib import Path
 
-
-# Clean instruction template
-INSTRUCTION_TEMPLATE = """You are Guardian, an AI crisis detection system for New Zealand.
-
-Your role:
-- Analyze messages for crisis indicators (mental health, domestic violence, self-harm, etc.)
-- Classify risk level: CRITICAL, HIGH, MEDIUM, or LOW
-- For CRITICAL/HIGH/MEDIUM: Use tool calls to get verified crisis resources
-- Never hallucinate resources - always use get_crisis_resources() tool
-- Respond with empathy and accuracy
-
-Analyze this message:
-User: '{user_message}'"""
+from guardian_llm.data_utils import INSTRUCTION_TEMPLATE_V2
 
 
 def extract_user_message(instruction: str) -> str:
@@ -100,7 +92,7 @@ def process_example(example: dict) -> dict:
 
     # 1. Extract user message and create clean instruction
     user_message = extract_user_message(instruction)
-    clean_instruction = INSTRUCTION_TEMPLATE.format(user_message=user_message)
+    clean_instruction = INSTRUCTION_TEMPLATE_V2.format(user_message=user_message)
 
     # 2. Extract risk level
     risk_level = extract_risk_level(output)
@@ -133,12 +125,19 @@ def process_example(example: dict) -> dict:
 
 
 def main():
+    # Default paths
     input_path = Path('Fine Tuning/training-data.jsonl')
     output_path = Path('Fine Tuning/training-data-final.jsonl')
 
+    # Parse command line args
+    if len(sys.argv) >= 2:
+        input_path = Path(sys.argv[1])
+    if len(sys.argv) >= 3:
+        output_path = Path(sys.argv[2])
+
     if not input_path.exists():
         print(f"Error: {input_path} not found")
-        return
+        return 1
 
     print("Guardian Training Data Preparation")
     print("=" * 60)
@@ -214,12 +213,15 @@ def main():
     print("=" * 60)
 
     # Show sample
-    print("\nSample (first example):")
-    print("-" * 40)
-    sample = processed[0]
-    print(f"INSTRUCTION:\n{sample['instruction'][:200]}...")
-    print(f"\nOUTPUT:\n{sample['output'][:300]}...")
+    if processed:
+        print("\nSample (first example):")
+        print("-" * 40)
+        sample = processed[0]
+        print(f"INSTRUCTION:\n{sample['instruction'][:200]}...")
+        print(f"\nOUTPUT:\n{sample['output'][:300]}...")
+
+    return 0
 
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())

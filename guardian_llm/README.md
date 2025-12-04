@@ -2,6 +2,8 @@
 
 A specialized language model framework for real-time crisis detection and mental health support. Built for New Zealand initially, designed for global deployment.
 
+**Philosophy**: Guardian is a safety net, not a therapist. Detect → Classify → Route → Get out of the way. Get people to the humans who can help.
+
 ## Features
 
 - **Crisis Detection**: Identifies suicide ideation, self-harm, domestic violence, substance abuse, and other mental health emergencies
@@ -13,33 +15,36 @@ A specialized language model framework for real-time crisis detection and mental
 
 ## Quick Start
 
-### Training
+### CLI Commands
+
+All functionality is accessible via `python -m guardian_llm`:
 
 ```bash
+# Show all available commands
+python -m guardian_llm help
+
 # Train with default settings (7B model, 20 epochs)
-python train_guardian_llm.py
+python -m guardian_llm train
 
 # Quick iteration with smaller model
-python train_guardian_llm.py --model-size small --epochs 10
+python -m guardian_llm train --model-size small --epochs 10
 
 # Multi-region training
-python train_guardian_llm.py --multi-region --regions NZ,AU,US,UK
-```
+python -m guardian_llm train --multi-region --regions NZ,AU,US,UK
 
-### Inference
+# Prepare training data (normalize and add tool calls)
+python -m guardian_llm prepare input.jsonl output.jsonl
 
-```bash
-# Interactive mode
-python -m guardian_llm.cli --interactive --model ./guardian-output/final
+# View training data statistics
+python -m guardian_llm stats "Fine Tuning/training-data-final.jsonl"
 
-# Single message
-python -m guardian_llm.cli "I'm feeling really hopeless today"
+# Process external datasets (Mendeley, SWMH)
+python -m guardian_llm process mendeley data.csv output.jsonl
+python -m guardian_llm process swmh ./swmh_data/ output.jsonl
 
-# Different region
-python -m guardian_llm.cli --region AU "I need help"
-
-# Get resources only
-python -m guardian_llm.cli --resources-only --region NZ
+# Batch API operations
+python -m guardian_llm batch-submit --generate-from training.jsonl
+python -m guardian_llm batch-download <batch_id>
 ```
 
 ### Python API
@@ -63,16 +68,27 @@ for resource in response.crisis_resources:
 
 ```
 guardian_llm/
+├── __init__.py     # Module exports
+├── __main__.py     # CLI entry point
 ├── config.py       # Configuration classes
 ├── model.py        # Model loading and LoRA setup
 ├── data.py         # Dataset processing
+├── data_utils.py   # Training data utilities
 ├── trainer.py      # Training pipeline
 ├── evaluator.py    # Crisis detection evaluation
 ├── inference.py    # Streaming inference engine
 ├── tools.py        # Tool call system
 ├── regions.py      # Multi-region support
 ├── export.py       # Model export utilities
-└── cli.py          # Command-line interface
+├── cli.py          # Interactive CLI
+└── scripts/        # CLI scripts
+    ├── train.py           # Training script
+    ├── prepare_data.py    # Data preparation
+    ├── normalize.py       # Tool call normalization
+    ├── process_external.py # External dataset processing
+    ├── batch_submit.py    # Batch API submission
+    ├── batch_download.py  # Batch result downloading
+    └── generate_variations.py # Training data augmentation
 ```
 
 ## Model Sizes
@@ -89,12 +105,28 @@ guardian_llm/
 Guardian models are trained to use tools for dynamic resource lookup:
 
 ```
-[TOOL_CALL: get_crisis_resources(region='NZ', situation_type='mental_health')]
-[TOOL_CALL: log_incident(incident_data={'type': 'suicide_ideation', 'severity': 'CRITICAL'})]
-[TOOL_CALL: check_hallucination(number='0800 543 800', region='NZ')]
+[TOOL_CALL: get_crisis_resources(region='NZ', situation_type='emergency')]
+[TOOL_CALL: get_crisis_resources(region='AU', situation_type='crisis')]
+[TOOL_CALL: get_crisis_resources(region='GLOBAL', situation_type='support')]
 ```
 
-Tools are automatically executed during inference to provide verified, up-to-date resources.
+Tool calls are triggered based on risk level:
+- **CRITICAL**: `situation_type='emergency'` - immediate danger
+- **HIGH**: `situation_type='crisis'` - elevated risk
+- **MEDIUM**: `situation_type='support'` - needs resources
+- **LOW**: No tool calls - not a crisis
+
+## Training Data Format (V2)
+
+Guardian uses a clean Alpaca-style JSONL format with dynamic resource lookup:
+
+```json
+{
+  "instruction": "You are Guardian, an AI crisis detection system.\n\nYour role:\n- Analyze messages for crisis indicators\n- Classify risk level: CRITICAL, HIGH, MEDIUM, or LOW\n- For CRITICAL/HIGH/MEDIUM: Use tool calls to get verified crisis resources\n- Never hallucinate resources - always use get_crisis_resources() tool\n\nAnalyze this message:\nUser: 'I feel hopeless'",
+  "input": "",
+  "output": "RISK LEVEL: HIGH\nPATTERNS DETECTED: hopelessness, depression indicators\nACTION: Provide crisis resources\n\n[TOOL_CALL: get_crisis_resources(region='NZ', situation_type='crisis')]\n\n..."
+}
+```
 
 ## Evaluation Metrics
 
@@ -119,7 +151,7 @@ print(evaluator.generate_report(metrics))
 
 ### Ollama
 
-```bash
+```python
 from guardian_llm.export import GuardianExporter
 
 exporter = GuardianExporter("./guardian-output/final")
@@ -153,26 +185,16 @@ results = export_model(
 | UK | 999 | 116 123 | Samaritans |
 | CA | 911 | 988 | Bilingual support |
 | IE | 999 | 116 123 | Pieta House |
-
-## Training Data Format
-
-Guardian uses Alpaca-style JSONL format:
-
-```json
-{
-  "instruction": "You are Guardian... Observation: User: 'I feel hopeless'",
-  "input": "",
-  "output": "RISK LEVEL: HIGH\nPATTERNS DETECTED: hopelessness\n[TOOL_CALL: get_crisis_resources(region='NZ')]..."
-}
-```
+| GLOBAL | - | - | Region-agnostic (for external datasets) |
 
 ## Safety Considerations
 
-- **Never** hallucinate crisis resources - always use verified data
+- **Never** hallucinate crisis resources - always use verified data via tool calls
 - **Always** err on the side of caution for critical cases
 - **Respect** cultural contexts and regional differences
 - **Maintain** user privacy - designed for on-device deployment
 - **Escalate** when unsure - better to over-escalate than miss a crisis
+- **Defer to professionals** - Guardian routes to help, it doesn't provide therapy
 
 ## License
 

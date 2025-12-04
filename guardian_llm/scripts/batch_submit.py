@@ -6,25 +6,21 @@ Uses the guardian_llm.data_utils module for consistent formatting.
 
 Usage:
     export ANTHROPIC_API_KEY="your-key-here"
-    python3 submit_batch.py
+    python -m guardian_llm.scripts.batch_submit
 
 Or:
-    python3 submit_batch.py --api-key "your-key-here" --input seeds.jsonl
+    python -m guardian_llm.scripts.batch_submit --api-key "your-key-here" --input seeds.jsonl
 """
 
 import anthropic
 import argparse
 import json
 import os
+import re
 import sys
 from pathlib import Path
 
-# Use the guardian_llm module for consistent formatting
-try:
-    from guardian_llm.data_utils import prepare_batch_requests
-except ImportError:
-    # Fallback if module not installed
-    prepare_batch_requests = None
+from guardian_llm.data_utils import prepare_batch_requests, BATCH_GENERATION_PROMPT
 
 
 def create_seed_examples_from_existing(training_file: str, sample_size: int = 100) -> list:
@@ -40,7 +36,6 @@ def create_seed_examples_from_existing(training_file: str, sample_size: int = 10
                 data = json.loads(line)
                 # Extract user message from instruction
                 instruction = data.get('instruction', '')
-                import re
                 match = re.search(r"User:\s*['\"](.+?)['\"]", instruction, re.DOTALL)
                 if match:
                     user_message = match.group(1).strip()
@@ -86,7 +81,7 @@ def submit_batch(api_key: str, input_file: str = "batch_requests.jsonl"):
             requests=list(client.batches._parse_requests(f))
         )
 
-    print(f"\n✓ Batch submitted successfully!")
+    print(f"\n Batch submitted successfully!")
     print(f"  Batch ID: {batch.id}")
     print(f"  Status: {batch.processing_status}")
     print(f"  Created: {batch.created_at}")
@@ -95,7 +90,7 @@ def submit_batch(api_key: str, input_file: str = "batch_requests.jsonl"):
     print(f"  python3 -c \"import anthropic; c = anthropic.Anthropic(); print(c.batches.retrieve('{batch.id}').processing_status)\"")
 
     print(f"\nTo download results when complete:")
-    print(f"  python3 download_batch_results.py {batch.id}")
+    print(f"  python -m guardian_llm.scripts.batch_download {batch.id}")
 
     # Save batch ID for later reference
     with open("batch_id.txt", "w") as f:
@@ -112,10 +107,10 @@ def main():
         epilog="""
 Examples:
   # Generate batch requests from existing training data
-  python3 submit_batch.py --generate-from "Fine Tuning/training-data-final.jsonl" --sample 50
+  python -m guardian_llm.scripts.batch_submit --generate-from "Fine Tuning/training-data-final.jsonl" --sample 50
 
   # Submit existing batch requests file
-  python3 submit_batch.py --input-file batch_requests.jsonl
+  python -m guardian_llm.scripts.batch_submit --input-file batch_requests.jsonl
         """
     )
     parser.add_argument("--api-key", help="Anthropic API key (or set ANTHROPIC_API_KEY env var)")
@@ -136,28 +131,8 @@ Examples:
         print(f"Generating batch requests from: {args.generate_from}")
         seeds = create_seed_examples_from_existing(args.generate_from, args.sample)
 
-        if prepare_batch_requests:
-            count = prepare_batch_requests(seeds, Path(args.input_file))
-            print(f"Created {count} batch requests -> {args.input_file}")
-        else:
-            # Fallback manual implementation
-            from guardian_llm.data_utils import BATCH_GENERATION_PROMPT
-            with open(args.input_file, 'w') as f:
-                for i, seed in enumerate(seeds):
-                    prompt = BATCH_GENERATION_PROMPT.format(
-                        seed_message=seed['user_message'],
-                        risk_level=seed['risk_level']
-                    )
-                    request = {
-                        "custom_id": f"guardian_gen_{i}",
-                        "params": {
-                            "model": "claude-sonnet-4-20250514",
-                            "max_tokens": 2000,
-                            "messages": [{"role": "user", "content": prompt}]
-                        }
-                    }
-                    f.write(json.dumps(request) + '\n')
-            print(f"Created {len(seeds)} batch requests -> {args.input_file}")
+        count = prepare_batch_requests(seeds, Path(args.input_file))
+        print(f"Created {count} batch requests -> {args.input_file}")
 
     submit_batch(api_key, args.input_file)
 

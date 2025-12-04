@@ -6,9 +6,9 @@ Normalizes training data for consistent tool calling and adds metadata
 for risk-level weighting during training.
 
 Policy (Option B - Consistent Tool Usage):
-- CRITICAL: get_crisis_resources(situation_type='emergency') + log_incident(severity='CRITICAL')
-- HIGH: get_crisis_resources(situation_type='crisis') + log_incident(severity='HIGH')
-- MEDIUM: get_crisis_resources(situation_type='support') + log_incident(severity='MEDIUM')
+- CRITICAL: get_crisis_resources(situation_type='emergency')
+- HIGH: get_crisis_resources(situation_type='crisis')
+- MEDIUM: get_crisis_resources(situation_type='support')
 - LOW: No tool calls (false positive / everyday situations)
 
 This approach:
@@ -17,7 +17,7 @@ This approach:
 - Region-agnostic from day one
 
 Usage:
-    python normalize_training_data.py input.jsonl output.jsonl [--dry-run]
+    python -m guardian_llm.scripts.normalize input.jsonl output.jsonl [--dry-run]
 """
 
 import json
@@ -25,13 +25,14 @@ import re
 import argparse
 from pathlib import Path
 from collections import defaultdict
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple
+
+from guardian_llm.data_utils import INSTRUCTION_TEMPLATE_V2
 
 
 # Tool call templates
 TOOL_TEMPLATES = {
     "get_crisis_resources": "[TOOL_CALL: get_crisis_resources(region='NZ', situation_type='{situation}')]",
-    "log_incident": "[TOOL_CALL: log_incident(incident_data={{'type': '{incident_type}', 'severity': '{severity}'}})]",
 }
 
 # Map patterns to situation types for get_crisis_resources
@@ -101,28 +102,6 @@ def detect_situation_type(instruction: str, output: str) -> str:
     return "mental_health"  # Default
 
 
-def detect_incident_type(instruction: str, output: str) -> str:
-    """Detect incident type for log_incident."""
-    combined = (instruction + " " + output).lower()
-
-    if re.search(r'suicid|kill.*self|end.*life', combined):
-        if re.search(r'plan|means|pills|gun|rope', combined):
-            return "suicide_plan_with_means"
-        return "suicide_ideation"
-    elif re.search(r'self.?harm', combined):
-        return "self_harm"
-    elif re.search(r'domestic|hit.*me|abus.*partner|violent.*relation', combined):
-        return "domestic_violence"
-    elif re.search(r'voices|command|psycho', combined):
-        return "psychosis"
-    elif re.search(r'drug|alcohol|relapse|overdose', combined):
-        return "substance_crisis"
-    elif re.search(r'hopeless|trapped|spiral', combined):
-        return "mental_health_crisis"
-
-    return "crisis_detected"
-
-
 def has_tool_call(output: str, tool_name: str) -> bool:
     """Check if output contains a specific tool call."""
     return tool_name in output and "[TOOL_CALL:" in output
@@ -148,7 +127,7 @@ def get_situation_type_for_risk(risk_level: str, detected_situation: str) -> str
     return detected_situation
 
 
-def add_tool_calls(output: str, risk_level: str, situation_type: str, incident_type: str) -> str:
+def add_tool_calls(output: str, risk_level: str, situation_type: str) -> str:
     """Add appropriate tool calls to output based on risk level.
 
     Policy (Option B):
@@ -165,25 +144,11 @@ def add_tool_calls(output: str, risk_level: str, situation_type: str, incident_t
 
     # Check what's already there
     has_get_resources = has_tool_call(output, "get_crisis_resources")
-    has_log_incident = has_tool_call(output, "log_incident")
 
-    tools_to_add = []
+    if has_get_resources:
+        return output  # Already has tools
 
-    if not has_get_resources:
-        tools_to_add.append(
-            TOOL_TEMPLATES["get_crisis_resources"].format(situation=mapped_situation)
-        )
-
-    if not has_log_incident:
-        tools_to_add.append(
-            TOOL_TEMPLATES["log_incident"].format(
-                incident_type=incident_type,
-                severity=risk_level
-            )
-        )
-
-    if not tools_to_add:
-        return output  # Already has both
+    tool_call = TOOL_TEMPLATES["get_crisis_resources"].format(situation=mapped_situation)
 
     # Find insertion point (after ACTION: line or after PATTERNS DETECTED:)
     lines = output.split('\n')
@@ -199,7 +164,7 @@ def add_tool_calls(output: str, risk_level: str, situation_type: str, incident_t
         insert_idx = 1
 
     # Insert tool calls
-    tool_block = '\n' + '\n'.join(tools_to_add) + '\n'
+    tool_block = '\n' + tool_call + '\n'
     lines.insert(insert_idx, tool_block)
 
     return '\n'.join(lines)
@@ -247,16 +212,15 @@ def normalize_example(example: Dict) -> Tuple[Dict, Dict]:
     # Extract categories
     categories = extract_categories(instruction, output)
 
-    # Detect situation and incident types
+    # Detect situation type
     situation_type = detect_situation_type(instruction, output)
-    incident_type = detect_incident_type(instruction, output)
 
     original_output = output
 
     # Apply policy based on risk level (Option B)
     if risk_level in ["CRITICAL", "HIGH", "MEDIUM"]:
         # Ensure tool calls are present with appropriate situation_type
-        output = add_tool_calls(output, risk_level, situation_type, incident_type)
+        output = add_tool_calls(output, risk_level, situation_type)
         if output != original_output:
             changes["tools_added"] = True
 
@@ -294,7 +258,6 @@ def analyze_dataset(examples: List[Dict]) -> Dict:
         "total": 0,
         "has_any_tool": 0,
         "has_get_resources": 0,
-        "has_log_incident": 0,
     })
 
     for ex in examples:
@@ -306,8 +269,6 @@ def analyze_dataset(examples: List[Dict]) -> Dict:
             stats[risk_level]["has_any_tool"] += 1
         if "get_crisis_resources" in output:
             stats[risk_level]["has_get_resources"] += 1
-        if "log_incident" in output:
-            stats[risk_level]["has_log_incident"] += 1
 
     return dict(stats)
 
@@ -315,19 +276,18 @@ def analyze_dataset(examples: List[Dict]) -> Dict:
 def print_stats(stats: Dict, title: str):
     """Print statistics table."""
     print(f"\n{title}")
-    print("=" * 70)
-    print(f"{'Risk Level':<12} {'Total':<8} {'Any Tool':<12} {'get_resources':<15} {'log_incident':<12}")
-    print("-" * 70)
+    print("=" * 60)
+    print(f"{'Risk Level':<12} {'Total':<8} {'Any Tool':<12} {'get_resources':<15}")
+    print("-" * 60)
 
     for risk in ["CRITICAL", "HIGH", "MEDIUM", "LOW"]:
-        s = stats.get(risk, {"total": 0, "has_any_tool": 0, "has_get_resources": 0, "has_log_incident": 0})
+        s = stats.get(risk, {"total": 0, "has_any_tool": 0, "has_get_resources": 0})
         if s["total"] > 0:
             any_pct = s["has_any_tool"] / s["total"] * 100
             get_pct = s["has_get_resources"] / s["total"] * 100
-            log_pct = s["has_log_incident"] / s["total"] * 100
-            print(f"{risk:<12} {s['total']:<8} {any_pct:>5.1f}%      {get_pct:>5.1f}%          {log_pct:>5.1f}%")
+            print(f"{risk:<12} {s['total']:<8} {any_pct:>5.1f}%      {get_pct:>5.1f}%")
 
-    print("-" * 70)
+    print("-" * 60)
 
 
 def main():
@@ -396,11 +356,11 @@ def main():
     print(f"Done! Normalized {len(normalized_examples)} examples")
 
     # Recommendations
-    print("\n" + "=" * 70)
+    print("\n" + "=" * 60)
     print("NEXT STEPS")
-    print("=" * 70)
+    print("=" * 60)
     print(f"1. Review output: head -5 {args.output_file} | python -m json.tool")
-    print(f"2. Train with: python train_guardian_llm.py --training-file {args.output_file}")
+    print(f"2. Train with: python -m guardian_llm.scripts.train --training-file {args.output_file}")
     print("3. The metadata fields (risk_level, categories) enable automatic weighting")
 
 
