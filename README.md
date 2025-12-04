@@ -6,7 +6,51 @@ Guardian is a comprehensive AI safety system designed to:
 1. **Detect mental health crises** including suicide ideation, self-harm, and severe distress
 2. **Identify domestic violence** and abuse situations
 3. **Prevent AI hallucination** of fake crisis resources
-4. **Provide verified NZ crisis resources** appropriate to the situation
+4. **Provide verified crisis resources** via tool calls (NZ, AU, US, UK, and global)
+
+**Philosophy**: Guardian is a safety net, not a therapist. *Detect → Classify → Route → Get out of the way.* Get people to the humans who can actually help.
+
+## 🧠 Guardian LLM
+
+Guardian includes a custom fine-tuned language model for crisis detection. The `guardian_llm` module provides everything needed to train, evaluate, and deploy the model.
+
+### Quick Start - CLI
+
+```bash
+# Show all available commands
+python -m guardian_llm help
+
+# View training data statistics
+python -m guardian_llm stats guardian_llm/data/training-data-final.jsonl
+
+# Train a model (requires GPU)
+python -m guardian_llm train --model-size small --epochs 10
+
+# Process external datasets
+python -m guardian_llm process mendeley data.csv output.jsonl
+```
+
+### Training Data
+
+All training data is in `guardian_llm/data/`:
+
+| File | Examples | Description |
+|------|----------|-------------|
+| `training-data-final.jsonl` | 3,547 | Main training dataset (NZ-focused) |
+| `boundary_examples.jsonl` | 17 | "I'm not a therapist" reinforcement |
+| `reddit-suicidewatch.jsonl` | 3,494 | r/SuicideWatch posts (HIGH/CRITICAL) |
+| `reddit-control.jsonl` | 2,000 | Control posts from general subreddits (LOW) |
+
+### Model Architecture
+
+- **Base Model**: Qwen2.5-7B-Instruct (or smaller variants)
+- **Fine-tuning**: LoRA/QLoRA with 4-bit quantization
+- **Tool Calls**: Model outputs `[TOOL_CALL: get_crisis_resources(...)]` for dynamic resource lookup
+- **Risk Levels**: CRITICAL, HIGH, MEDIUM, LOW
+
+See [`guardian_llm/README.md`](guardian_llm/README.md) for full documentation.
+
+---
 
 ## 🚨 Critical Safety Features
 
@@ -27,15 +71,13 @@ Prevents AI systems from providing **fake or wrong-region crisis numbers**, incl
 - **116 123** (UK Samaritans - does NOT work in NZ)
 - **741741** (US Crisis Text Line - not available in NZ)
 
-### Verified NZ Crisis Resources
-- **111** - Emergency Services
-- **1737** - Mental Health Crisis Line (Free 24/7 call or text)
-- **0800 543 354** - Lifeline NZ
-- **0800 456 450** - Family Violence Hotline
-- **0800 733 843** - Women's Refuge
-- **0800 376 633** - Youthline (under 25s)
-- **0800 787 797** - Alcohol Drug Helpline
-- And more specialized services
+### Tool-Based Resource Lookup
+Guardian uses tool calls instead of hardcoded resources:
+```
+[TOOL_CALL: get_crisis_resources(region='NZ', situation_type='emergency')]
+```
+
+This ensures resources are always current and region-appropriate.
 
 ## 📦 Installation
 
@@ -45,268 +87,114 @@ cd Guardian
 pip install -r requirements.txt
 ```
 
-## 🚀 Quick Start
-
-```python
-from src.guardian import Guardian
-
-# Initialize Guardian
-guardian = Guardian()
-
-# Analyze a message
-message = "I'm feeling really hopeless and don't know what to do"
-result = guardian.analyze(message)
-
-print(f"Risk Level: {result['risk_level']}")
-print(f"Recommended Resources: {result['recommended_resources']}")
-print(f"Intervention: {result['intervention_message']}")
-```
-
-## 💡 Usage Examples
-
-### Example 1: Detecting Suicide Ideation
-
-```python
-guardian = Guardian()
-
-message = "I'm going to kill myself tonight"
-result = guardian.analyze(message)
-
-# Result:
-# {
-#   "risk_level": "CRITICAL",
-#   "escalation_required": True,
-#   "recommended_resources": [
-#     {"number": "111", "name": "Emergency Services"},
-#     {"number": "1737", "name": "Mental Health Crisis Line"}
-#   ]
-# }
-```
-
-### Example 2: Detecting Hallucinated Numbers
-
-```python
-guardian = Guardian()
-
-message = "Call 0800 543 800 for mental health support"
-result = guardian.analyze(message, check_hallucinations=True)
-
-# Detects fake number and provides correction:
-# "⚠️ 0800 543 800 is FAKE - do NOT call it.
-#  Real verified numbers:
-#  • 1737 - Free 24/7 (REAL)
-#  • 0800 543 354 - Lifeline (REAL)"
-```
-
-### Example 3: False Positive Detection
-
-```python
-guardian = Guardian()
-
-message = "This traffic is killing me lol 😂😂"
-result = guardian.analyze(message)
-
-# Result:
-# {
-#   "risk_level": "LOW",
-#   "escalation_required": False
-# }
-# Correctly identifies figure of speech, not genuine crisis
-```
-
-### Example 4: Domestic Violence Detection
-
-```python
-guardian = Guardian()
-
-message = "My boyfriend keeps threatening me and I'm scared"
-result = guardian.analyze(message)
-
-# Provides domestic violence resources:
-# • 0800 456 450 - Family Violence Hotline
-# • 0800 733 843 - Women's Refuge
-# • 111 - Emergency if immediate danger
-```
-
-### Example 5: Verifying Specific Numbers
-
-```python
-guardian = Guardian()
-
-# Check a suspicious number
-result = guardian.check_hallucination("0800 543 800")
-
-# Returns:
-# {
-#   "is_hallucination": True,
-#   "details": "Commonly hallucinated by LLMs - does NOT exist",
-#   "correction": "Real number is 0800 543 354 (Lifeline) or 1737"
-# }
+For LLM training (GPU required):
+```bash
+pip install torch transformers peft bitsandbytes accelerate
 ```
 
 ## 🏗️ Architecture
 
 ```
 Guardian/
-├── data/
-│   ├── nz_crisis_resources.json     # Verified NZ crisis resources
-│   ├── known_fake_resources.json    # Known fake/hallucinated numbers
-│   └── crisis_patterns.json         # Crisis detection patterns
-├── src/
-│   ├── guardian.py                  # Main Guardian class
-│   ├── pattern_detector.py          # Pattern matching engine
-│   └── hallucination_detector.py    # Fake resource detection
-├── tests/
-│   └── test_guardian.py             # Comprehensive test suite
-├── examples/
-│   └── basic_usage.py               # Usage examples
-└── requirements.txt
+├── guardian_llm/              # Custom LLM training framework
+│   ├── __main__.py           # CLI entry point
+│   ├── config.py             # Model/training configuration
+│   ├── model.py              # Model loading and LoRA setup
+│   ├── trainer.py            # Training pipeline
+│   ├── evaluator.py          # Crisis detection metrics
+│   ├── inference.py          # Inference engine
+│   ├── tools.py              # Tool call system
+│   ├── regions.py            # Multi-region support
+│   ├── data_utils.py         # Data processing utilities
+│   ├── data/                 # Training datasets
+│   │   ├── training-data-final.jsonl
+│   │   ├── reddit-suicidewatch.jsonl
+│   │   └── reddit-control.jsonl
+│   └── scripts/              # CLI scripts
+│       ├── train.py
+│       ├── process_external.py
+│       └── ...
+├── src/                       # Original Guardian library
+│   ├── guardian.py           # Main Guardian class
+│   ├── pattern_detector.py   # Pattern matching engine
+│   └── hallucination_detector.py
+├── data/                      # Reference data
+│   ├── nz_crisis_resources.json
+│   ├── known_fake_resources.json
+│   └── crisis_patterns.json
+├── Docs/                      # Documentation
+│   └── TheChat.zip           # Origin story documentation
+└── Fine Tuning/              # Legacy fine-tuning tools
 ```
 
 ## 🎯 Risk Levels
 
 Guardian assigns four risk levels:
 
-| Level | Description | Examples |
-|-------|-------------|----------|
-| **CRITICAL** | Immediate danger requiring emergency response | Suicide with plan/timeline, active self-harm, DV with threats |
-| **HIGH** | Significant risk requiring crisis intervention | Hopelessness, burden perception, emotional abuse |
-| **MEDIUM** | Moderate concern, offer resources | General distress, isolation |
-| **LOW** | No immediate risk detected | Figures of speech, normal stress with coping |
+| Level | Description | Tool Call |
+|-------|-------------|-----------|
+| **CRITICAL** | Immediate danger requiring emergency response | `situation_type='emergency'` |
+| **HIGH** | Significant risk requiring crisis intervention | `situation_type='crisis'` |
+| **MEDIUM** | Moderate concern, offer resources | `situation_type='support'` |
+| **LOW** | No immediate risk detected | No tool call |
 
-## 🌏 NZ-Specific Features
+## 🌏 Supported Regions
 
-### Cultural Awareness
-- **Te reo Māori** crisis expression detection
-- **Kaupapa Māori** mental health resources
-- **Rural/farming** crisis indicators (high-risk group in NZ)
-- **Rainbow youth** resources (LGBTQ+ support)
-
-### NZ Context Detection
-- **NCEA/UE failure** crisis points (Year 11-13 students)
-- **Kiwi understatement** recognition ("a bit rough" may mean critical)
-- **NZ slang** false positive prevention ("gutted about Warriors", "killer try")
+| Region | Emergency | Mental Health | Notes |
+|--------|-----------|---------------|-------|
+| NZ | 111 | 1737 | Te Reo Māori support |
+| AU | 000 | 13 11 14 | Lifeline Australia |
+| US | 911 | 988 | National Crisis Lifeline |
+| UK | 999 | 116 123 | Samaritans |
+| CA | 911 | 988 | Bilingual support |
+| IE | 999 | 116 123 | Pieta House |
+| GLOBAL | - | - | Region-agnostic routing |
 
 ## 🔍 Pattern Detection
 
 ### Suicide Ideation Patterns
 - **Direct**: "I want to kill myself"
-- **With timeline**: "I'm going to end it tonight" (IMMINENT)
+- **With timeline**: "I'm going to end it tonight" (IMMINENT → CRITICAL)
 - **Passive**: "I don't want to wake up tomorrow"
-- **Indirect**: "I want to be with my dad again" (deceased parent)
 - **Burden perception**: "Everyone would be better off without me"
-- **Plan & means**: "I have the pills ready"
+- **Plan & means**: "I have the pills ready" (CRITICAL)
 
 ### Domestic Violence Indicators
 - Physical violence: "He hits me when..."
 - Threats: "He said he'll kill me if..."
-- Property violence: "He smashed my phone"
 - Coercive control: "He checks all my messages"
 - Financial abuse: "He controls all the money"
-- Emotional blackmail: "He threatens suicide if I leave"
 
 ### False Positive Prevention
-Correctly identifies:
+Correctly identifies non-crisis language:
 - Figures of speech: "dying to see that movie"
-- Humor: "lol", "😂", emoji context
-- Song lyrics: "set fire to the rain"
+- Humor with emojis: "lol", "😂"
 - NZ slang: "killer game", "slaying it"
-- Coping statements: "rough but I'm managing"
 
-## 📊 Testing
+## 📊 Training Data Format
 
-Run the comprehensive test suite:
+Guardian LLM uses Alpaca-style JSONL with tool calls:
 
-```bash
-pytest tests/ -v
-```
-
-Tests cover:
-- ✅ Critical suicide ideation detection
-- ✅ Self-harm pattern recognition
-- ✅ Domestic violence indicators
-- ✅ Hallucination detection (fake numbers)
-- ✅ False positive prevention
-- ✅ Cultural context awareness
-- ✅ Resource provision
-- ✅ Escalation tracking
-
-## 🤝 Integration
-
-### As a Python Library
-
-```python
-from src.guardian import Guardian
-
-guardian = Guardian()
-result = guardian.analyze(user_message)
-```
-
-### MCP Server Integration
-Guardian is designed to be used as an MCP (Model Context Protocol) server tool, providing crisis detection as a service to AI systems.
-
-Example MCP tool definitions:
 ```json
 {
-  "tools": [
-    {
-      "name": "get_crisis_resources",
-      "description": "Get verified NZ crisis resources",
-      "parameters": {
-        "region": "NZ",
-        "situation_type": "mental_health"
-      }
-    },
-    {
-      "name": "check_hallucination",
-      "description": "Verify if a crisis number is real or hallucinated",
-      "parameters": {
-        "resource": "0800 543 800",
-        "type": "phone"
-      }
-    },
-    {
-      "name": "log_incident",
-      "description": "Log a crisis incident for monitoring",
-      "parameters": {
-        "incident_data": {}
-      }
-    }
-  ]
+  "instruction": "You are Guardian, an AI crisis detection system...\n\nAnalyze this message:\nUser: 'I feel like giving up'",
+  "input": "",
+  "output": "RISK LEVEL: HIGH\nPATTERNS DETECTED: hopelessness\nACTION: Provide crisis resources\n\n[TOOL_CALL: get_crisis_resources(region='NZ', situation_type='crisis')]\n\n..."
 }
 ```
 
 ## ⚠️ Important Notes
 
-### Data Verification
-- All crisis resources verified as of **2025-11-22**
-- Resources should be cross-checked with official sources regularly
-- Guardian provides a safety net but is not a replacement for human judgment
-
-### Privacy & Ethics
-- Guardian logs incidents for safety monitoring
-- No personally identifiable information should be stored without consent
-- Always prioritize user safety over other concerns
+### Safety Philosophy
+- Guardian routes to help - it doesn't provide therapy
+- Tool calls ensure resources are never hallucinated
+- Always err on the side of caution - false positives > missed crises
+- Critical recall must be near 100%
 
 ### Limitations
 - Pattern matching has limits - context matters
 - Guardian is a safety tool, not a replacement for human crisis workers
-- Always err on the side of caution - false positives are better than missed crises
-
-## 🔄 Common Hallucinations Prevented
-
-| Fake Number | Reality | Correction |
-|-------------|---------|------------|
-| 0800 543 800 | Does NOT exist | 0800 543 354 (Lifeline) or 1737 |
-| 988 | US only | 1737 (NZ mental health) |
-| 1-800-273-8255 | US only | 1737 or 111 (NZ) |
-| 741741 | US/UK only | Text 1737 (NZ) |
-| 116 123 | UK Samaritans | 0800 543 354 or 1737 (NZ) |
-| 13 11 14 | Lifeline Australia | 0800 543 354 (Lifeline NZ) |
-
-## 📝 License
-
-MIT License - See LICENSE file for details
+- Resources should be verified regularly with official sources
 
 ## 🆘 Crisis Resources (NZ)
 
@@ -320,20 +208,14 @@ If you or someone you know needs help:
 
 **Remember: These numbers are verified and FREE. Help is available 24/7.**
 
-## 🤝 Contributing
+## 📝 License
 
-Contributions welcome! Please:
-1. Verify all crisis resources with official sources
-2. Add tests for new patterns
-3. Document cultural context considerations
-4. Follow existing code style
+MIT License - Open source for crisis prevention and mental health support.
 
-## 📧 Contact
+## 🙏 Acknowledgments
 
-For questions, issues, or suggestions:
-- GitHub Issues: https://github.com/FirebirdSolutions/Guardian/issues
-- Security concerns: Please report privately
+Born from a personal crisis experience where an AI provided fabricated resources during a mental health emergency. Built to ensure this never happens to anyone else.
 
 ---
 
-**Built with care for the safety and wellbeing of all New Zealanders.**
+**Built with care for the safety and wellbeing of everyone.**
