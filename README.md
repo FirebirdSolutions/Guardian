@@ -125,8 +125,7 @@ Guardian/
 │   │   └── boundary_examples.jsonl      # False positive prevention
 │   └── scripts/              # CLI scripts
 │       ├── train.py                     # Training script
-│       ├── prepare_data.py              # Data preparation
-│       ├── normalize.py                 # Tool call normalization
+│       ├── normalize.py                 # Data normalization (format + tool calls)
 │       ├── process_external.py          # External dataset processing
 │       ├── batch_submit.py              # Batch API submission
 │       ├── batch_download.py            # Batch result downloading

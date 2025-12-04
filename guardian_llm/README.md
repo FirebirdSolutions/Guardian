@@ -32,11 +32,11 @@ python -m guardian_llm train --model-size small --epochs 10
 # Multi-region training
 python -m guardian_llm train --multi-region --regions NZ,AU,US,UK
 
-# Prepare training data (normalize and add tool calls)
-python -m guardian_llm prepare input.jsonl output.jsonl
+# Normalize training data (clean format + consistent tool calls)
+python -m guardian_llm normalize input.jsonl output.jsonl
 
 # View training data statistics
-python -m guardian_llm stats "Fine Tuning/training-data-final.jsonl"
+python -m guardian_llm stats guardian_llm/data/training-data-final.jsonl
 
 # Process external datasets (Mendeley, SWMH)
 python -m guardian_llm process mendeley data.csv output.jsonl
@@ -83,8 +83,7 @@ guardian_llm/
 ├── cli.py          # Interactive CLI
 └── scripts/        # CLI scripts
     ├── train.py           # Training script
-    ├── prepare_data.py    # Data preparation
-    ├── normalize.py       # Tool call normalization
+    ├── normalize.py       # Data normalization (format + tool calls)
     ├── process_external.py # External dataset processing
     ├── batch_submit.py    # Batch API submission
     ├── batch_download.py  # Batch result downloading
