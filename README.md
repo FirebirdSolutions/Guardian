@@ -84,12 +84,18 @@ This ensures resources are always current and region-appropriate.
 ```bash
 git clone https://github.com/FirebirdSolutions/Guardian.git
 cd Guardian
-pip install -r requirements.txt
-```
 
-For LLM training (GPU required):
-```bash
-pip install torch transformers peft bitsandbytes accelerate
+# Install core package
+pip install -e .
+
+# For ML training and inference (GPU recommended)
+pip install -e ".[ml]"
+
+# For training with monitoring (TensorBoard, W&B)
+pip install -e ".[training]"
+
+# For development (includes testing tools)
+pip install -e ".[dev]"
 ```
 
 ## 🏗️ Architecture
@@ -97,6 +103,7 @@ pip install torch transformers peft bitsandbytes accelerate
 ```
 Guardian/
 ├── guardian_llm/              # Custom LLM training framework
+│   ├── __init__.py           # Module exports
 │   ├── __main__.py           # CLI entry point
 │   ├── config.py             # Model/training configuration
 │   ├── model.py              # Model loading and LoRA setup
@@ -106,25 +113,32 @@ Guardian/
 │   ├── tools.py              # Tool call system
 │   ├── regions.py            # Multi-region support
 │   ├── data_utils.py         # Data processing utilities
+│   ├── data.py               # Dataset processing
+│   ├── export.py             # Model export utilities
+│   ├── cli.py                # Interactive CLI
 │   ├── data/                 # Training datasets
-│   │   ├── training-data-final.jsonl
-│   │   ├── reddit-suicidewatch.jsonl
-│   │   └── reddit-control.jsonl
+│   │   ├── training-data-final.jsonl    # Main training dataset (NZ-focused)
+│   │   ├── training-merged.jsonl        # Master combined dataset
+│   │   ├── reddit-suicidewatch.jsonl    # r/SuicideWatch posts (HIGH/CRITICAL)
+│   │   ├── reddit-control.jsonl         # Control posts (LOW risk)
+│   │   ├── swmh-suicidewatch.jsonl      # SWMH dataset processed
+│   │   └── boundary_examples.jsonl      # False positive prevention
 │   └── scripts/              # CLI scripts
-│       ├── train.py
-│       ├── process_external.py
-│       └── ...
-├── src/                       # Original Guardian library
-│   ├── guardian.py           # Main Guardian class
-│   ├── pattern_detector.py   # Pattern matching engine
-│   └── hallucination_detector.py
-├── data/                      # Reference data
-│   ├── nz_crisis_resources.json
-│   ├── known_fake_resources.json
-│   └── crisis_patterns.json
+│       ├── train.py                     # Training script
+│       ├── prepare_data.py              # Data preparation
+│       ├── normalize.py                 # Tool call normalization
+│       ├── process_external.py          # External dataset processing
+│       ├── batch_submit.py              # Batch API submission
+│       ├── batch_download.py            # Batch result downloading
+│       └── generate_variations.py       # Training data augmentation
 ├── Docs/                      # Documentation
-│   └── TheChat.zip           # Origin story documentation
-└── Fine Tuning/              # Legacy fine-tuning tools
+│   ├── GUARDIAN_COMPLETE_STRATEGY.md    # Full business/technical strategy
+│   ├── NZ_CRISIS_RESOURCES_VERIFIED.md  # Verified resource list
+│   └── SAFETY_AND_CRISIS_RESPONSE.md    # Safety protocols
+├── Fine Tuning/              # Legacy fine-tuning tools
+├── tests/                    # Test suite
+├── pyproject.toml            # Project configuration
+└── runpod_setup.sh           # RunPod GPU environment setup
 ```
 
 ## 🎯 Risk Levels
