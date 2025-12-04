@@ -110,13 +110,16 @@ class GuardianModel:
         if quantization_config:
             model_kwargs["quantization_config"] = quantization_config
 
-        # Enable flash attention if available
+        # Enable flash attention if available and requested
         if self.config.use_flash_attention:
             try:
+                import flash_attn  # noqa: F401
                 model_kwargs["attn_implementation"] = "flash_attention_2"
                 logger.info("Using Flash Attention 2")
-            except Exception:
-                logger.warning("Flash Attention not available, using default")
+            except ImportError:
+                logger.info("Flash Attention not installed, using SDPA attention. "
+                           "For faster training: pip install flash-attn --no-build-isolation")
+                model_kwargs["attn_implementation"] = "sdpa"  # Use PyTorch's efficient attention
 
         self.model = AutoModelForCausalLM.from_pretrained(
             self.config.base_model_id,

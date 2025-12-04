@@ -109,6 +109,9 @@ class GuardianTrainerCallback(TrainerCallback):
 class WeightedDataCollator(DataCollatorForLanguageModeling):
     """Data collator that supports sample weighting for crisis examples."""
 
+    # Fields to extract/remove before padding (non-tensor metadata)
+    EXTRA_FIELDS = ["weight", "risk_level", "categories", "region", "text"]
+
     def __init__(self, tokenizer, mlm=False, weight_key="weight"):
         super().__init__(tokenizer=tokenizer, mlm=mlm)
         self.weight_key = weight_key
@@ -118,6 +121,11 @@ class WeightedDataCollator(DataCollatorForLanguageModeling):
         weights = None
         if features and self.weight_key in features[0]:
             weights = torch.tensor([f.pop(self.weight_key, 1.0) for f in features])
+
+        # Remove other non-tensor fields that can't be batched
+        for f in features:
+            for field in self.EXTRA_FIELDS:
+                f.pop(field, None)
 
         # Call parent collator
         batch = super().__call__(features)
