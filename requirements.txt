@@ -1,0 +1,33 @@
+# Guardian LLM Training Requirements
+# Install: pip install -r requirements.txt
+
+# Core
+numpy>=1.24.0
+
+# PyTorch with CUDA 12.1 (adjust for your CUDA version)
+# For CUDA 12.1: pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+# For CUDA 11.8: pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+# For CPU only: pip install torch torchvision torchaudio
+torch>=2.0.0
+torchvision
+torchaudio
+
+# Transformers and training
+transformers>=4.40.0
+datasets>=2.18.0
+peft>=0.10.0
+accelerate>=0.28.0
+bitsandbytes>=0.43.0
+
+# Model loading
+safetensors>=0.4.0
+sentencepiece>=0.2.0
+protobuf>=4.0.0
+
+# Monitoring (optional)
+tensorboard>=2.15.0
+wandb>=0.16.0
+
+# Development (optional)
+pytest>=8.0.0
+ruff>=0.3.0
