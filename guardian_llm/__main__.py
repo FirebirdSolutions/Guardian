@@ -7,8 +7,7 @@ Usage:
 
 Commands:
     train           Train the Guardian LLM model
-    prepare         Prepare and normalize training data
-    normalize       Normalize existing training data for consistent tool calling
+    normalize       Normalize training data (clean format + consistent tool calls)
     process         Process external datasets (Mendeley, SWMH)
     batch-submit    Submit batch job to Anthropic API
     batch-download  Download and process batch results
@@ -18,9 +17,9 @@ Commands:
 
 Examples:
     python -m guardian_llm train --model-size small --epochs 10
-    python -m guardian_llm prepare input.jsonl output.jsonl
+    python -m guardian_llm normalize input.jsonl output.jsonl
     python -m guardian_llm process mendeley data.csv output.jsonl
-    python -m guardian_llm stats "Fine Tuning/training-data-final.jsonl"
+    python -m guardian_llm stats guardian_llm/data/training-data-final.jsonl
 """
 
 import sys
@@ -51,11 +50,8 @@ def main():
         from guardian_llm.scripts.train import main as train_main
         train_main()
 
-    elif command == "prepare":
-        from guardian_llm.scripts.prepare_data import main as prepare_main
-        sys.exit(prepare_main())
-
-    elif command == "normalize":
+    elif command in ("normalize", "prepare"):
+        # 'prepare' is kept for backwards compatibility, maps to normalize
         from guardian_llm.scripts.normalize import main as normalize_main
         normalize_main()
 
