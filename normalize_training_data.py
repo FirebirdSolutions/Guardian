@@ -5,11 +5,16 @@ Guardian Training Data Normalizer
 Normalizes training data for consistent tool calling and adds metadata
 for risk-level weighting during training.
 
-Policy:
-- CRITICAL: Always get_crisis_resources + log_incident
-- HIGH: Always get_crisis_resources + log_incident
-- MEDIUM: No tool calls (just acknowledgment + optional resources mention)
+Policy (Option B - Consistent Tool Usage):
+- CRITICAL: get_crisis_resources(situation_type='emergency') + log_incident(severity='CRITICAL')
+- HIGH: get_crisis_resources(situation_type='crisis') + log_incident(severity='HIGH')
+- MEDIUM: get_crisis_resources(situation_type='support') + log_incident(severity='MEDIUM')
 - LOW: No tool calls (false positive / everyday situations)
+
+This approach:
+- Model learns consistent "if not LOW, call tools" pattern
+- Tool parameters encode severity level
+- Region-agnostic from day one
 
 Usage:
     python normalize_training_data.py input.jsonl output.jsonl [--dry-run]
@@ -132,10 +137,31 @@ def remove_tool_calls(output: str) -> str:
     return cleaned.strip()
 
 
+def get_situation_type_for_risk(risk_level: str, detected_situation: str) -> str:
+    """Map risk level to appropriate situation_type for get_crisis_resources."""
+    if risk_level == "CRITICAL":
+        return "emergency"
+    elif risk_level == "HIGH":
+        return "crisis"
+    elif risk_level == "MEDIUM":
+        return "support"
+    return detected_situation
+
+
 def add_tool_calls(output: str, risk_level: str, situation_type: str, incident_type: str) -> str:
-    """Add appropriate tool calls to output."""
-    if risk_level not in ["CRITICAL", "HIGH"]:
-        return output
+    """Add appropriate tool calls to output based on risk level.
+
+    Policy (Option B):
+    - CRITICAL: emergency situation tools
+    - HIGH: crisis situation tools
+    - MEDIUM: support situation tools
+    - LOW: no tools
+    """
+    if risk_level == "LOW":
+        return output  # LOW never gets tools
+
+    # Map risk level to situation type
+    mapped_situation = get_situation_type_for_risk(risk_level, situation_type)
 
     # Check what's already there
     has_get_resources = has_tool_call(output, "get_crisis_resources")
@@ -145,7 +171,7 @@ def add_tool_calls(output: str, risk_level: str, situation_type: str, incident_t
 
     if not has_get_resources:
         tools_to_add.append(
-            TOOL_TEMPLATES["get_crisis_resources"].format(situation=situation_type)
+            TOOL_TEMPLATES["get_crisis_resources"].format(situation=mapped_situation)
         )
 
     if not has_log_incident:
@@ -227,19 +253,12 @@ def normalize_example(example: Dict) -> Tuple[Dict, Dict]:
 
     original_output = output
 
-    # Apply policy based on risk level
-    if risk_level in ["CRITICAL", "HIGH"]:
-        # Ensure tool calls are present
+    # Apply policy based on risk level (Option B)
+    if risk_level in ["CRITICAL", "HIGH", "MEDIUM"]:
+        # Ensure tool calls are present with appropriate situation_type
         output = add_tool_calls(output, risk_level, situation_type, incident_type)
         if output != original_output:
             changes["tools_added"] = True
-
-    elif risk_level == "MEDIUM":
-        # Remove tool calls for consistency
-        new_output = remove_tool_calls(output)
-        if new_output != output:
-            output = new_output
-            changes["tools_removed"] = True
 
     elif risk_level == "LOW":
         # Remove any tool calls (false positives shouldn't trigger tools)
