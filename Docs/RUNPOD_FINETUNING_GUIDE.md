@@ -15,7 +15,10 @@ You're going to:
 
 ---
 
-## pip install transformers peft datasets hf_transfer bitsandbytes tensorboard accelerator
+## pip install transformers peft datasets hf_transfer bitsandbytes tensorboard accelerator flash-attn --no-build-isolation
+
+python -m guardian_llm train --model-size large --epochs 10 --batch-size 48 --learning-rate 1e-5 --early-stopping 0
+
 
 grep "eval_loss" guardian-output-13/checkpoint-*/trainer_state.json | sort -k 3 -g
 
