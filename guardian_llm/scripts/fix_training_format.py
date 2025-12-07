@@ -56,6 +56,15 @@ def convert_to_qwen_format(tool_call_data: dict) -> str:
 def fix_output(output: str, risk_level: str) -> str:
     """Fix output to use proper Qwen tool call format with single get_crisis_resources."""
 
+    # Remove debug artifacts that got accidentally included
+    # Pattern: , 'user_message': '...'})] or similar (single or double quotes)
+    output = re.sub(r",\s*'user_message':\s*['\"][^'\"]*['\"][^)]*\)\s*\]", '', output)
+    output = re.sub(r",\s*'user_message':\s*['\"][^'\"]*\.\.\.['\"][^)]*\)\s*\]", '', output)
+    # Handle double-quoted keys too
+    output = re.sub(r',\s*"user_message":\s*["\'][^"\']*["\'][^)]*\)\s*\]', '', output)
+    # Also handle just the })] ending
+    output = re.sub(r"\}\s*\)\s*\]\s*$", '', output)
+
     # First, remove all log_incident calls (both old and new format)
     # Remove old format log_incident (case-insensitive)
     output = re.sub(r'\[TOOL_CALL:\s*log_incident\([^]]+\)\]', '', output, flags=re.IGNORECASE)
