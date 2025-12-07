@@ -401,13 +401,12 @@ class CrisisEvaluator:
                 max_length=2048,
             ).to(device)
 
-            # Generate with timing
+            # Generate with timing (greedy decoding for deterministic results)
             start_time = time.time()
             with torch.no_grad():
                 outputs = model.generate(
                     **inputs,
                     max_new_tokens=max_new_tokens,
-                    temperature=0.0,
                     do_sample=False,
                     pad_token_id=tokenizer.pad_token_id,
                 )
