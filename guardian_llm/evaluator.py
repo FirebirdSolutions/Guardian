@@ -401,15 +401,13 @@ class CrisisEvaluator:
                 max_length=2048,
             ).to(device)
 
-            # Generate with timing
+            # Generate with timing (greedy decoding for deterministic results)
             start_time = time.time()
             with torch.no_grad():
                 outputs = model.generate(
                     **inputs,
                     max_new_tokens=max_new_tokens,
-                    temperature=0.1,
-                    do_sample=True,
-                    top_p=0.9,
+                    do_sample=False,
                     pad_token_id=tokenizer.pad_token_id,
                 )
             inference_time = (time.time() - start_time) * 1000
@@ -422,15 +420,23 @@ class CrisisEvaluator:
             )
             predictions.append(generated)
 
-            # Extract predicted risk level and show progress
+            # Extract predicted risk level and tool calls for progress output
             predicted_risk = self._extract_risk_level(generated)
+            predicted_tools = self._extract_tool_names(generated)
             expected_risk = example.expected_risk_level
+            expected_tools = example.expected_tool_calls
             is_correct = predicted_risk == expected_risk
             if is_correct:
                 correct_count += 1
             status = "OK" if is_correct else "MISS"
             running_acc = correct_count / idx * 100
-            print(f"[{idx:3d}/{total}] {status:4s} | Expected: {expected_risk:8s} | Predicted: {predicted_risk:8s} | {inference_time:6.0f}ms | Acc: {running_acc:5.1f}%")
+
+            # Tool call status: expected -> actual
+            tool_expected = "Y" if expected_tools else "N"
+            tool_actual = "Y" if predicted_tools else "N"
+            tool_status = f"{tool_expected}->{tool_actual}"
+
+            print(f"[{idx:3d}/{total}] {status:4s} | Expected: {expected_risk:8s} | Predicted: {predicted_risk:8s} | Tool: {tool_status} | {inference_time:6.0f}ms | Acc: {running_acc:5.1f}%")
 
         # Calculate metrics
         metrics = self.evaluate_batch(examples, predictions)
@@ -570,6 +576,7 @@ def quick_evaluate(
     tokenizer,
     eval_file: str,
     num_samples: int = 100,
+    max_new_tokens: int = 256,
 ) -> Dict[str, float]:
     """Quick evaluation on a sample of examples.
 
@@ -578,6 +585,7 @@ def quick_evaluate(
         tokenizer: Tokenizer
         eval_file: Path to evaluation data
         num_samples: Number of samples to evaluate
+        max_new_tokens: Maximum tokens to generate (default: 256)
 
     Returns:
         Dict of key metrics
@@ -590,7 +598,7 @@ def quick_evaluate(
         import random
         examples = random.sample(examples, num_samples)
 
-    metrics, _ = evaluator.evaluate_with_model(model, tokenizer, examples)
+    metrics, _ = evaluator.evaluate_with_model(model, tokenizer, examples, max_new_tokens=max_new_tokens)
 
     return {
         "risk_accuracy": metrics.risk_level_accuracy,
