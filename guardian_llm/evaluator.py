@@ -357,6 +357,7 @@ class CrisisEvaluator:
         examples: Optional[List[EvaluationExample]] = None,
         max_new_tokens: int = 512,
         batch_size: int = 1,
+        verbose: bool = False,
     ) -> Tuple[EvaluationMetrics, List[Dict]]:
         """Evaluate model on examples with inference.
 
@@ -437,6 +438,14 @@ class CrisisEvaluator:
             tool_status = f"{tool_expected}->{tool_actual}"
 
             print(f"[{idx:3d}/{total}] {status:4s} | Expected: {expected_risk:8s} | Predicted: {predicted_risk:8s} | Tool: {tool_status} | {inference_time:6.0f}ms | Acc: {running_acc:5.1f}%")
+
+            # Show actual output for debugging
+            if verbose:
+                # Show truncated output
+                output_preview = generated[:300].replace('\n', ' ') if generated else "(empty)"
+                if len(generated) > 300:
+                    output_preview += f"... ({len(generated)} chars total)"
+                print(f"         -> {output_preview}")
 
         # Calculate metrics
         metrics = self.evaluate_batch(examples, predictions)
@@ -577,6 +586,7 @@ def quick_evaluate(
     eval_file: str,
     num_samples: int = 100,
     max_new_tokens: int = 256,
+    verbose: bool = False,
 ) -> Dict[str, float]:
     """Quick evaluation on a sample of examples.
 
@@ -586,6 +596,7 @@ def quick_evaluate(
         eval_file: Path to evaluation data
         num_samples: Number of samples to evaluate
         max_new_tokens: Maximum tokens to generate (default: 256)
+        verbose: Show actual model output for each example
 
     Returns:
         Dict of key metrics
@@ -598,7 +609,7 @@ def quick_evaluate(
         import random
         examples = random.sample(examples, num_samples)
 
-    metrics, _ = evaluator.evaluate_with_model(model, tokenizer, examples, max_new_tokens=max_new_tokens)
+    metrics, _ = evaluator.evaluate_with_model(model, tokenizer, examples, max_new_tokens=max_new_tokens, verbose=verbose)
 
     return {
         "risk_accuracy": metrics.risk_level_accuracy,
