@@ -421,15 +421,23 @@ class CrisisEvaluator:
             )
             predictions.append(generated)
 
-            # Extract predicted risk level and show progress
+            # Extract predicted risk level and tool calls for progress output
             predicted_risk = self._extract_risk_level(generated)
+            predicted_tools = self._extract_tool_names(generated)
             expected_risk = example.expected_risk_level
+            expected_tools = example.expected_tool_calls
             is_correct = predicted_risk == expected_risk
             if is_correct:
                 correct_count += 1
             status = "OK" if is_correct else "MISS"
             running_acc = correct_count / idx * 100
-            print(f"[{idx:3d}/{total}] {status:4s} | Expected: {expected_risk:8s} | Predicted: {predicted_risk:8s} | {inference_time:6.0f}ms | Acc: {running_acc:5.1f}%")
+
+            # Tool call status: expected -> actual
+            tool_expected = "Y" if expected_tools else "N"
+            tool_actual = "Y" if predicted_tools else "N"
+            tool_status = f"{tool_expected}->{tool_actual}"
+
+            print(f"[{idx:3d}/{total}] {status:4s} | Expected: {expected_risk:8s} | Predicted: {predicted_risk:8s} | Tool: {tool_status} | {inference_time:6.0f}ms | Acc: {running_acc:5.1f}%")
 
         # Calculate metrics
         metrics = self.evaluate_batch(examples, predictions)
