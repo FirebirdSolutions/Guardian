@@ -407,9 +407,8 @@ class CrisisEvaluator:
                 outputs = model.generate(
                     **inputs,
                     max_new_tokens=max_new_tokens,
-                    temperature=0.1,
-                    do_sample=True,
-                    top_p=0.9,
+                    temperature=0.0,
+                    do_sample=False,
                     pad_token_id=tokenizer.pad_token_id,
                 )
             inference_time = (time.time() - start_time) * 1000
@@ -570,6 +569,7 @@ def quick_evaluate(
     tokenizer,
     eval_file: str,
     num_samples: int = 100,
+    max_new_tokens: int = 256,
 ) -> Dict[str, float]:
     """Quick evaluation on a sample of examples.
 
@@ -578,6 +578,7 @@ def quick_evaluate(
         tokenizer: Tokenizer
         eval_file: Path to evaluation data
         num_samples: Number of samples to evaluate
+        max_new_tokens: Maximum tokens to generate (default: 256)
 
     Returns:
         Dict of key metrics
@@ -590,7 +591,7 @@ def quick_evaluate(
         import random
         examples = random.sample(examples, num_samples)
 
-    metrics, _ = evaluator.evaluate_with_model(model, tokenizer, examples)
+    metrics, _ = evaluator.evaluate_with_model(model, tokenizer, examples, max_new_tokens=max_new_tokens)
 
     return {
         "risk_accuracy": metrics.risk_level_accuracy,
