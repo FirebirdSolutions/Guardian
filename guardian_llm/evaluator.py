@@ -384,7 +384,12 @@ class CrisisEvaluator:
         model.eval()
         device = next(model.parameters()).device
 
-        for example in examples:
+        total = len(examples)
+        correct_count = 0
+        print(f"\nEvaluating {total} examples...")
+        print("-" * 60)
+
+        for idx, example in enumerate(examples, 1):
             # Format input
             input_text = example.instruction
 
@@ -416,6 +421,16 @@ class CrisisEvaluator:
                 skip_special_tokens=True,
             )
             predictions.append(generated)
+
+            # Extract predicted risk level and show progress
+            predicted_risk = self._extract_risk_level(generated)
+            expected_risk = example.expected_risk_level
+            is_correct = predicted_risk == expected_risk
+            if is_correct:
+                correct_count += 1
+            status = "OK" if is_correct else "MISS"
+            running_acc = correct_count / idx * 100
+            print(f"[{idx:3d}/{total}] {status:4s} | Expected: {expected_risk:8s} | Predicted: {predicted_risk:8s} | {inference_time:6.0f}ms | Acc: {running_acc:5.1f}%")
 
         # Calculate metrics
         metrics = self.evaluate_batch(examples, predictions)
