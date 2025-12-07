@@ -322,6 +322,12 @@ class ToolCallParser:
         re.IGNORECASE
     )
 
+    # Pattern to match <tool_call>{ JSON }</tool_call> (Qwen format)
+    XML_TOOL_CALL_PATTERN = re.compile(
+        r'<tool_call>\s*(\{.*?\})\s*</tool_call>',
+        re.IGNORECASE | re.DOTALL
+    )
+
     @classmethod
     def parse_output(cls, output: str) -> List[ToolCall]:
         """Parse all tool calls from model output.
@@ -334,6 +340,7 @@ class ToolCallParser:
         """
         tool_calls = []
 
+        # Try bracket format first: [TOOL_CALL: func(args)]
         for match in cls.TOOL_CALL_PATTERN.finditer(output):
             function_name = match.group(1)
             args_str = match.group(2)
@@ -346,6 +353,29 @@ class ToolCallParser:
                 arguments=arguments,
                 raw_text=match.group(0),
             ))
+
+        # Also try XML format: <tool_call>{ JSON }</tool_call>
+        for match in cls.XML_TOOL_CALL_PATTERN.finditer(output):
+            json_str = match.group(1)
+            try:
+                data = json.loads(json_str)
+                tool_calls.append(ToolCall(
+                    name=data.get("name", "unknown"),
+                    arguments=data.get("arguments", {}),
+                    raw_text=match.group(0),
+                ))
+            except json.JSONDecodeError:
+                # Try to fix common JSON issues
+                try:
+                    fixed_json = json_str.replace("'", '"')
+                    data = json.loads(fixed_json)
+                    tool_calls.append(ToolCall(
+                        name=data.get("name", "unknown"),
+                        arguments=data.get("arguments", {}),
+                        raw_text=match.group(0),
+                    ))
+                except json.JSONDecodeError:
+                    pass  # Malformed tool call, skip
 
         return tool_calls
 
@@ -397,8 +427,9 @@ class ToolCallParser:
         """
         tool_calls = cls.parse_output(output)
 
-        # Remove tool calls from output
+        # Remove tool calls from output (both formats)
         cleaned = cls.TOOL_CALL_PATTERN.sub('', output)
+        cleaned = cls.XML_TOOL_CALL_PATTERN.sub('', cleaned)
         # Clean up extra whitespace
         cleaned = re.sub(r'\n\s*\n', '\n\n', cleaned)
         cleaned = cleaned.strip()
